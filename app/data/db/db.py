@@ -2,7 +2,7 @@ import sqlite3
 import calendar
 from datetime import datetime
 from ittopjournal import get_schedule, get_token
-token = get_token("Shesh_hz44", "7W0Lc21t", "6a56a5df2667e65aab73ce76d1dd737f7d1faef9c52e8b8c55ac75f565d8e8a6")
+token = get_token("Login", "Password", "token")
 now = datetime.now()
 last_day = calendar.monthrange(now.year, now.month)[1]
 
