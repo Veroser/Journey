@@ -44,10 +44,10 @@ def parse_homework(token: str, db_path: str):
         ''', (checked, current, overdue, under_inspection, deleted, all_tasks))
 
         db.commit()
-        print(f"✅ ДЗ: Всего={all_tasks}, Сдано={checked}, На проверке={under_inspection}, Просрочено={overdue}, Текущие={current}")
+        print(f"ДЗ: Всего={all_tasks}, Сдано={checked}, На проверке={under_inspection}, Просрочено={overdue}, Текущие={current}")
 
     except Exception as e:
-        print(f"❌ Ошибка парсинга ДЗ: {str(e)}")
+        print(f"Ошибка парсинга ДЗ: {str(e)}")
         db.rollback()
         raise
     finally:
