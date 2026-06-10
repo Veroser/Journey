@@ -4,7 +4,6 @@ import os
 import argparse
 import sqlite3
 
-# Добавляем текущую папку (db/) в путь — ittopjournal рядом
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from ittopjournal import get_homework
@@ -65,7 +64,7 @@ def main():
         parse_homework(args.token, args.db)
         sys.exit(0)
     except Exception as e:
-        print(f"❌ Критическая ошибка: {str(e)}", file=sys.stderr)
+        print(f"Критическая ошибка: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
 
