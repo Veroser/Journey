@@ -45,24 +45,24 @@ def parse_period(token: str, db_path: str, start_date: str, end_date: str = None
     # Удаляем все уроки
     c.execute("DELETE FROM lessons")
     deleted_lessons = c.rowcount
-    print(f"🗑️ Удалено уроков: {deleted_lessons}")
+    print(f"Удалено уроков: {deleted_lessons}")
     
     # Удаляем все дни
     c.execute("DELETE FROM study_days")
     deleted_days = c.rowcount
-    print(f"🗑️ Удалено дней: {deleted_days}")
+    print(f"Удалено дней: {deleted_days}")
     
     # Сохраняем изменения
     db.commit()
-    print("✅ Старые данные удалены")
+    print("Старые данные удалены")
     sys.stdout.flush()
     
     # Считаем общее количество дней для прогресса
     total_days = (end - start).days + 1
     processed_days = 0
     
-    print(f"🔄 Начало парсинга с {start_date} по {end_date}")
-    print(f"📅 Всего дней: {total_days}")
+    print(f"Начало парсинга с {start_date} по {end_date}")
+    print(f"Всего дней: {total_days}")
     sys.stdout.flush()
     
     current_date = start
@@ -101,14 +101,14 @@ def parse_period(token: str, db_path: str, start_date: str, end_date: str = None
                                 lesson.get("room_name", "")
                             ))
                     
-                    print(f"✅ {date_str}: {len(schedule)} уроков")
+                    print(f"{date_str}: {len(schedule)} уроков")
                 else:
-                    print(f"⚠️ {date_str}: ошибка сохранения дня")
+                    print(f"{date_str}: ошибка сохранения дня")
             else:
-                print(f"📭 {date_str}: нет занятий")
+                print(f"{date_str}: нет занятий")
                 
         except Exception as e:
-            print(f"❌ {date_str}: ошибка - {str(e)}")
+            print(f"{date_str}: ошибка - {str(e)}")
         
         # Прогресс
         processed_days += 1
@@ -122,7 +122,7 @@ def parse_period(token: str, db_path: str, start_date: str, end_date: str = None
     db.commit()
     db.close()
     
-    print("✅ Парсинг завершен!")
+    print("Парсинг завершен!")
     sys.stdout.flush()
 
 
@@ -151,7 +151,7 @@ def main():
         last_day = calendar.monthrange(next_month.year, next_month.month)[1]
         end_date = next_month.replace(day=last_day).strftime("%Y-%m-%d")
         
-        print(f"📅 Период по умолчанию: {start_date} - {end_date}")
+        print(f"Период по умолчанию: {start_date} - {end_date}")
     else:
         start_date = args.start_date
         end_date = args.end_date if args.end_date else start_date
@@ -160,7 +160,7 @@ def main():
         parse_period(args.token, args.db, start_date, end_date)
         sys.exit(0)
     except Exception as e:
-        print(f"❌ Критическая ошибка: {str(e)}", file=sys.stderr)
+        print(f"Критическая ошибка: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
 
