@@ -16,15 +16,12 @@ ScheduleManager::ScheduleManager(ApiClient *apiClient, QObject *parent)
 {
     initDatabase();
 
-    // Парсер расписания
     m_parserRunner = new ParserRunner(this);
     setupParserConnections();
 
-    // Парсер домашних заданий
     m_homeworkRunner = new ParserRunner(this);
     setupHomeworkParserConnections();
 
-    // Загружаем ДЗ при старте
     loadHomeworkFromDb();
 }
 
@@ -239,7 +236,6 @@ QVector<DaySchedule> ScheduleManager::getMonthSchedule(const QDate &month) const
     return QVector<DaySchedule>();
 }
 
-// ─── Парсер расписания ─────────────────────────────────────────────
 
 void ScheduleManager::setupParserConnections()
 {
@@ -274,7 +270,6 @@ void ScheduleManager::syncWithParser(const QString &jwtToken)
 
     QString dbPath = m_db.databaseName();
 
-    // Ищем parser_main.py
     QStringList searchPaths = {
         QCoreApplication::applicationDirPath() + "/db/parser_main.py",
         QCoreApplication::applicationDirPath() + "/../db/parser_main.py",
@@ -298,7 +293,7 @@ void ScheduleManager::syncWithParser(const QString &jwtToken)
         return;
     }
 
-    qDebug() << "🔄 Запуск парсера расписания:" << scriptPath;
+    qDebug() << "Запуск парсера расписания:" << scriptPath;
 
 }
 
@@ -315,11 +310,10 @@ void ScheduleManager::cancelSync()
 
 void ScheduleManager::onParserFinished(bool success, const QString &message)
 {
-    // Запускаем парсер ДЗ, флаг m_isSyncing остаётся true
     startHomeworkSync();
 
     if (success) {
-        qDebug() << "✅ Парсер расписания завершён:" << message;
+        qDebug() << "Парсер расписания завершён:" << message;
 
         QDate today = QDate::currentDate();
         loadDaySchedule(today);
@@ -341,8 +335,6 @@ void ScheduleManager::onParserProgress(int percent)
 {
     qDebug() << "Прогресс синхронизации:" << percent << "%";
 }
-
-// ─── Парсер домашних заданий ───────────────────────────────────────
 
 void ScheduleManager::setupHomeworkParserConnections()
 {
@@ -373,31 +365,28 @@ void ScheduleManager::startHomeworkSync()
     QString dbPath = QCoreApplication::applicationDirPath() + "/db/homework.db";
 
     if (scriptPath.isEmpty()) {
-        qWarning() << "⚠️ parser_homework.py не найден, пропускаем ДЗ";
+        qWarning() << "parser_homework.py не найден, пропускаем ДЗ";
         m_isSyncing = false;
         emit syncFinished();
         return;
     }
 
-    qDebug() << "🔄 Запуск парсера домашних заданий:" << scriptPath;
+    qDebug() << "Запуск парсера домашних заданий:" << scriptPath;
     m_homeworkRunner->runParser(scriptPath, m_pendingJwtToken, dbPath);
 }
 
 void ScheduleManager::onHomeworkParserFinished(bool success, const QString &message)
 {
     if (success) {
-        qDebug() << "✅ Парсер ДЗ завершён:" << message;
         loadHomeworkFromDb();
         emit homeworkUpdated();
     } else {
-        qWarning() << "⚠️ Парсер ДЗ провалился:" << message;
+        qWarning() << "Парсер ДЗ провалился:" << message;
     }
 
     m_isSyncing = false;
     emit syncFinished();
 }
-
-// ─── Загрузка ДЗ из SQLite ─────────────────────────────────────────
 
 void ScheduleManager::loadHomeworkFromDb()
 {
@@ -411,7 +400,6 @@ void ScheduleManager::loadHomeworkFromDb()
     }
 
     if (!QFileInfo::exists(dbPath)) {
-        qDebug() << "📭 homework.db не найден";
         return;
     }
 
@@ -424,7 +412,7 @@ void ScheduleManager::loadHomeworkFromDb()
     db.setDatabaseName(dbPath);
 
     if (!db.open()) {
-        qWarning() << "❌ Не удалось открыть homework.db:" << db.lastError().text();
+        qWarning() << "Не удалось открыть homework.db:" << db.lastError().text();
         return;
     }
 
@@ -437,7 +425,7 @@ void ScheduleManager::loadHomeworkFromDb()
             m_homeworkUnderInspection = query.value(3).toInt();
             m_homeworkAll = query.value(4).toInt();
 
-            qDebug() << "📊 ДЗ: всего=" << m_homeworkAll
+            qDebug() << "ДЗ: всего=" << m_homeworkAll
                      << "сдано=" << m_homeworkDone
                      << "на проверке=" << m_homeworkUnderInspection
                      << "просрочено=" << m_homeworkOverdue
@@ -448,8 +436,6 @@ void ScheduleManager::loadHomeworkFromDb()
     db.close();
     QSqlDatabase::removeDatabase(connName);
 }
-
-// ─── Геттеры ДЗ ────────────────────────────────────────────────────
 
 int ScheduleManager::homeworkAll() const { return m_homeworkAll; }
 int ScheduleManager::homeworkDone() const { return m_homeworkDone; }
