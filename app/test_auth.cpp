@@ -35,9 +35,7 @@ int main(int argc, char *argv[])
     // Обработчики сигналов
     QObject::connect(&authManager, &AuthManager::loginSuccess,
                      [&](const AuthData &data) {
-                         out << "\n========================================" << Qt::endl;
-                         out << "✅ АВТОРИЗАЦИЯ УСПЕШНА" << Qt::endl;
-                         out << "========================================" << Qt::endl;
+                         out << "АВТОРИЗАЦИЯ УСПЕШНА" << Qt::endl;
                          out << "User ID:     " << data.user_id << Qt::endl;
                          out << "Роль:        " << data.user_role << Qt::endl;
                          out << "Город:       " << data.city_data.name << Qt::endl;
@@ -51,7 +49,7 @@ int main(int argc, char *argv[])
 
     QObject::connect(&authManager, &AuthManager::loginFailed,
                      [&](const QString &error) {
-                         err << "❌ Ошибка: " << error << Qt::endl;
+                         err << "Ошибка: " << error << Qt::endl;
                          exitCode = 1;
                          QCoreApplication::exit(1);
                      });
@@ -86,7 +84,7 @@ int main(int argc, char *argv[])
         out.flush();
 
         QString password;
-        // Скрытый ввод пароля (без echo)
+        // Скрытый ввод пароля
         password = in.readLine();
 
         authManager.login(username, password);
