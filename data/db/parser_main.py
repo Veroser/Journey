@@ -38,8 +38,8 @@ def parse_period(token: str, db_path: str, start_date: str, end_date: str = None
     else:
         end = start
     
-    # 🧹 ОЧИЩАЕМ ВСЕ ДАННЫЕ ПЕРЕД ПАРСИНГОМ
-    print("🧹 Очистка старых данных...")
+    #ОЧИЩАЕМ ВСЕ ДАННЫЕ ПЕРЕД ПАРСИНГОМ
+    print("Очистка старых данных...")
     sys.stdout.flush()
     
     # Удаляем все уроки
