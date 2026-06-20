@@ -14,7 +14,7 @@ def parse_homework(token: str, db_path: str):
     c = db.cursor()
 
     c.execute('''
-        CREATE TABLE IF NOT EXISTS tasks (
+        CREATE TABLE IF NOT EXISTS homework (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             checked INTEGER DEFAULT 0,
             current INTEGER DEFAULT 0,
@@ -25,7 +25,7 @@ def parse_homework(token: str, db_path: str):
         )
     ''')
 
-    c.execute("DELETE FROM tasks")
+    c.execute("DELETE FROM homework")
 
     try:
         homework = get_homework(token)
@@ -38,7 +38,7 @@ def parse_homework(token: str, db_path: str):
         all_tasks = homework[5]["counter"]
 
         c.execute('''
-            INSERT INTO tasks (checked, current, overdue, under_inspection, deleted, all_tasks)
+            INSERT INTO homework (checked, current, overdue, under_inspection, deleted, all_tasks)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', (checked, current, overdue, under_inspection, deleted, all_tasks))
 
