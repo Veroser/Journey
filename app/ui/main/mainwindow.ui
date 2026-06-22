@@ -852,22 +852,27 @@
        </layout>
       </widget>
       <widget class="QWidget" name="feedbackTab">
-       <attribute name="title">
+        <attribute name="title">
         <string>Отзывы</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="feedbackLayout">
-        <item>
-         <widget class="QLabel" name="feedbackPlaceholder">
-          <property name="text">
-           <string>В разработке</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
+        </attribute>
+            <layout class="QVBoxLayout" name="feedbackLayout">
+                <property name="leftMargin">
+                    <number>16</number>
+                </property>
+                <property name="topMargin">
+                    <number>16</number>
+                </property>
+                <property name="rightMargin">
+                    <number>16</number>
+                </property>
+                <property name="bottomMargin">
+                    <number>16</number>
+                </property>
+                <item>
+                    <widget class="QListWidget" name="feedbackList"/>
+                </item>
+            </layout>
+        </widget>
      </widget>
     </item>
    </layout>

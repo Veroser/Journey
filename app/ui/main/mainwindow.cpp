@@ -52,6 +52,10 @@ MainWindow::MainWindow(AuthManager *authManager, ApiClient *apiClient, QWidget *
         ui->ratingStreamTotal->setText(QString("из %1").arg(m_scheduleManager->streamTotal()));
         updateLeaderboard();
     }
+    m_scheduleManager->loadFeedbackFromDb();
+    connect(m_scheduleManager, &ScheduleManager::feedbackUpdated, this, [this]() {
+        updateFeedbackList();
+    });
     // Инфа о пользователе
     m_scheduleManager->loadUserInfoFromDb();
     if (!m_scheduleManager->userName().isEmpty()) {
@@ -73,7 +77,6 @@ MainWindow::MainWindow(AuthManager *authManager, ApiClient *apiClient, QWidget *
         qDebug() << "Синхронизация завершена";
         ui->syncButton->setEnabled(true);
         ui->syncButton->setText("Синхронизировать");
-        QMessageBox::information(this, "Синхронизация", "Синхранизация выполнена!");
         m_scheduleManager->loadDaySchedule(QDate::currentDate());
     });
 
@@ -275,6 +278,25 @@ void MainWindow::updateLeaderboard()
     }
 }
 
+void MainWindow::updateFeedbackList()
+{
+    ui->feedbackList->clear();
+
+    QVector<ScheduleManager::FeedbackInfo> feedbackItems = m_scheduleManager->feedback();
+
+    for (const auto &item : feedbackItems) {
+        QString text = QString("%1\n%2\nПредмет: %3 | Преподаватель: %4")
+                           .arg(item.date, item.message, item.subject, item.teacher);
+        ui->feedbackList->addItem(text);
+    }
+
+    if (feedbackItems.isEmpty()) {
+        ui->feedbackList->addItem("Нет отзывов");
+    }
+
+    ui->feedbackList->show();
+}
+
 void MainWindow::applyTheme()
 {
     QString theme;
@@ -417,7 +439,12 @@ void MainWindow::applyTheme()
                 height: 8px;
             }
             QProgressBar::chunk {
+                background-color: #4CAF50;
                 border-radius: 4px;
+            }
+
+            QProgressBar#attendanceProgressBar::chunk {
+                background-color: #2196F3;
             }
 
             QListWidget {
@@ -568,7 +595,12 @@ void MainWindow::applyTheme()
                 height: 8px;
             }
             QProgressBar::chunk {
+                background-color: #4CAF50;
                 border-radius: 4px;
+            }
+
+            QProgressBar#attendanceProgressBar::chunk {
+                background-color: #2196F3;
             }
 
             QListWidget {

@@ -38,6 +38,7 @@ private:
     ScheduleWidget *m_scheduleWidget;
     bool m_isDarkTheme = false;
     void applyTheme();
+    void updateFeedbackList();
 };
 
 #endif // MAINWINDOW_H

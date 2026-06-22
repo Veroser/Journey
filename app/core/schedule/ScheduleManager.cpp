@@ -276,6 +276,7 @@ void ScheduleManager::syncWithParser(const QString &jwtToken)
 
     QStringList searchPaths = {
         QCoreApplication::applicationDirPath() + "/db/dist/schedule",
+        QCoreApplication::applicationDirPath() + "/db/dist_win/schedule.exe",
         QCoreApplication::applicationDirPath() + "/db/schedule.py",
         QCoreApplication::applicationDirPath() + "/../db/schedule.py",
         QCoreApplication::applicationDirPath() + "/../../data/db/schedule.py",
@@ -355,6 +356,7 @@ void ScheduleManager::startHomeworkSync()
 {
     QStringList searchPaths = {
         QCoreApplication::applicationDirPath() + "/db/dist/homework",
+        QCoreApplication::applicationDirPath() + "/db/dist_win/homework.exe",
         QCoreApplication::applicationDirPath() + "/db/homework.py",
         QCoreApplication::applicationDirPath() + "/../db/homework.py",
         QDir::currentPath() + "/data/db/homework.py"
@@ -451,6 +453,7 @@ void ScheduleManager::startMetricsSync()
 {
     QStringList searchPaths = {
         QCoreApplication::applicationDirPath() + "/db/dist/performance",
+        QCoreApplication::applicationDirPath() + "/db/dist_win/performance.exe",
         QCoreApplication::applicationDirPath() + "/db/performance.py",
         QCoreApplication::applicationDirPath() + "/../db/performance.py",
         QDir::currentPath() + "/data/db/performance.py"
@@ -473,6 +476,7 @@ void ScheduleManager::startMetricsSync()
     if (scriptPath.isEmpty()) {
         qWarning() << "performance.py не найден";
         loadMetricsFromMainDb();
+        startRatingSync();  // продолжаем цепочку даже без парсера
         return;
     }
 
@@ -483,19 +487,17 @@ void ScheduleManager::startMetricsSync()
                 qDebug() << "Метрики обновлены";
                 loadMetricsFromMainDb();
                 emit metricsUpdated();
-                startRatingSync();
             } else {
                 qWarning() << "Ошибка парсера метрик:" << msg;
             }
-            emit syncStatusChanged("Синхронизация завершена");
-            m_isSyncing = false;
-            emit syncFinished();
+            // Убрал emit syncFinished() отсюда — цепочка продолжается
+            startRatingSync();
         });
 
         connect(m_metricsRunner, &ParserRunner::parserError, this, [this](const QString &error) {
             qWarning() << "Ошибка парсера метрик:" << error;
-            m_isSyncing = false;
-            emit syncFailed(error);
+            // Не завершаем синхронизацию, пробуем продолжить
+            startRatingSync();
         });
     }
 
@@ -552,6 +554,7 @@ void ScheduleManager::startRatingSync()
 {
     QStringList searchPaths = {
         QCoreApplication::applicationDirPath() + "/db/dist/rating",
+        QCoreApplication::applicationDirPath() + "/db/dist_win/rating.exe",
         QCoreApplication::applicationDirPath() + "/db/rating.py",
         QCoreApplication::applicationDirPath() + "/../db/rating.py",
         QDir::currentPath() + "/data/db/rating.py"
@@ -573,6 +576,8 @@ void ScheduleManager::startRatingSync()
     if (scriptPath.isEmpty()) {
         qWarning() << "rating.py не найден";
         loadRatingFromDb();
+        startUserInfoSync();    // продолжаем цепочку
+        startFeedbackSync();
         return;
     }
 
@@ -582,8 +587,15 @@ void ScheduleManager::startRatingSync()
             if (success) {
                 loadRatingFromDb();
                 emit ratingUpdated();
-                startUserInfoSync();
             }
+            startUserInfoSync();
+            startFeedbackSync();
+        });
+
+        connect(m_ratingRunner, &ParserRunner::parserError, this, [this](const QString & /*error*/) {
+            // Продолжаем цепочку даже при ошибке
+            startUserInfoSync();
+            startFeedbackSync();
         });
     }
 
@@ -659,6 +671,7 @@ void ScheduleManager::startUserInfoSync()
 {
     QStringList searchPaths = {
         QCoreApplication::applicationDirPath() + "/db/dist/user",
+        QCoreApplication::applicationDirPath() + "/db/dist_win/user.exe",
         QCoreApplication::applicationDirPath() + "/db/user.py",
         QCoreApplication::applicationDirPath() + "/../db/user.py",
         QDir::currentPath() + "/data/db/user.py"
@@ -695,6 +708,111 @@ void ScheduleManager::startUserInfoSync()
 
     m_userInfoRunner->runParser(scriptPath, m_pendingJwtToken, dbPath);
 }
+
+void ScheduleManager::startFeedbackSync()
+{
+    QStringList searchPaths = {
+        QCoreApplication::applicationDirPath() + "/db/dist/feedback",
+        QCoreApplication::applicationDirPath() + "/db/dist_win/feedback.exe",
+        QCoreApplication::applicationDirPath() + "/db/feedback.py",
+        QCoreApplication::applicationDirPath() + "/../db/feedback.py",
+        QDir::currentPath() + "/data/db/feedback.py"
+    };
+
+    QString scriptPath;
+    for (const QString &path : searchPaths) {
+        if (QFileInfo::exists(path)) {
+            scriptPath = QFileInfo(path).absoluteFilePath();
+            break;
+        }
+    }
+
+    QString dbPath = QCoreApplication::applicationDirPath() + "/db/feedback.db";
+    if (!QFileInfo::exists(dbPath)) {
+        dbPath = QDir::currentPath() + "/data/db/feedback.db";
+    }
+
+    if (scriptPath.isEmpty()) {
+        qWarning() << "feedback.py не найден";
+        loadFeedbackFromDb();
+        // Завершаем синхронизацию даже без парсера
+        emit syncStatusChanged("Синхронизация завершена");
+        m_isSyncing = false;
+        emit syncFinished();
+        return;
+    }
+
+    if (!m_feedbackRunner) {
+        m_feedbackRunner = new ParserRunner(this);
+        connect(m_feedbackRunner, &ParserRunner::parserFinished, this, [this](bool success, const QString &msg) {
+            if (success) {
+                loadFeedbackFromDb();
+                emit feedbackUpdated();
+            }
+            // Финальное завершение всей цепочки
+            emit syncStatusChanged("Синхронизация завершена");
+            m_isSyncing = false;
+            emit syncFinished();
+        });
+
+        connect(m_feedbackRunner, &ParserRunner::parserError, this, [this](const QString &error) {
+            qWarning() << "Ошибка парсера отзывов:" << error;
+            // Даже при ошибке завершаем синхронизацию
+            emit syncStatusChanged("Синхронизация завершена");
+            m_isSyncing = false;
+            emit syncFinished();
+        });
+    }
+
+    emit syncStatusChanged("Загрузка отзывов...");
+    m_feedbackRunner->runParser(scriptPath, m_pendingJwtToken, dbPath);
+}
+
+void ScheduleManager::loadFeedbackFromDb()
+{
+    QString dbPath = QCoreApplication::applicationDirPath() + "/db/feedback.db";
+    if (!QFileInfo::exists(dbPath)) {
+        dbPath = QDir::currentPath() + "/data/db/feedback.db";
+    }
+
+    if (!QFileInfo::exists(dbPath)) {
+        return;
+    }
+
+    QString connName = "feedback_load";
+    if (QSqlDatabase::contains(connName)) {
+        QSqlDatabase::removeDatabase(connName);
+    }
+
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connName);
+    db.setDatabaseName(dbPath);
+
+    if (!db.open()) {
+        qWarning() << "Не удалось открыть feedback.db";
+        return;
+    }
+
+    QSqlQuery query(db);
+    m_feedback.clear();
+
+    if (query.exec("SELECT date, message, full_spec, teacher FROM feedback ORDER BY id DESC")) {
+        while (query.next()) {
+            FeedbackInfo info;
+            info.date = query.value(0).toString();
+            info.message = query.value(1).toString();
+            info.subject = query.value(2).toString();
+            info.teacher = query.value(3).toString();
+            m_feedback.append(info);
+        }
+    }
+
+    db.close();
+    QSqlDatabase::removeDatabase(connName);
+
+    qDebug() << "Отзывы: загружено" << m_feedback.size();
+}
+
+QVector<ScheduleManager::FeedbackInfo> ScheduleManager::feedback() const { return m_feedback; }
 
 void ScheduleManager::loadUserInfoFromDb()
 {

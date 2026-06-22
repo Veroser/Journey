@@ -16,6 +16,13 @@ public:
     explicit ScheduleManager(ApiClient *apiClient, QObject *parent = nullptr);
     ~ScheduleManager();
 
+    struct FeedbackInfo {
+        QString date;
+        QString message;
+        QString subject;
+        QString teacher;
+    };
+
     // Загрузка расписания
     void loadDaySchedule(const QDate &date);
     void loadWeekSchedule(const QDate &startDate);
@@ -52,6 +59,8 @@ public:
     QString userName() const;
     int userCoins() const;
     int userGems() const;
+    QVector<FeedbackInfo> feedback() const;
+    void loadFeedbackFromDb();  // сделайте public
 
     struct StudentInfo {
         QString fullName;
@@ -80,6 +89,7 @@ signals:
     void syncStatusChanged(const QString &status);
     void ratingUpdated();
     void userInfoUpdated();
+    void feedbackUpdated();
 
 private slots:
     void onScheduleDataReceived(const QJsonObject &json);
@@ -133,6 +143,11 @@ private:
 
     ParserRunner *m_userInfoRunner = nullptr;
     void startUserInfoSync();
+
+    ParserRunner *m_feedbackRunner = nullptr;
+    void startFeedbackSync();
+
+    QVector<FeedbackInfo> m_feedback;
 
     QString m_userName;
     int m_userCoins = 0;
